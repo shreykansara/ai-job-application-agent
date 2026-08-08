@@ -1,0 +1,51 @@
+Overall Evaluation Rubric
+Weight
+1. Problem Understanding and Agent Scope
+20
+2. Agent Specification Files – SKILLS.md etc.
+25
+3. Prompting and Iteration Process
+20
+4. Agent Behavior, Limitations and Output Quality
+20
+5. Demo and Explanation
+15
+Total
+100
+
+
+Final Rubric
+Weight
+How the first 15 exercises/demos help
+How the final Debate Agent exercise helps
+1. Problem Understanding and Agent Scope
+20
+• Agent planning exercise teaches students to define the goal, break the task into steps, identify required inputs, and decide the order of actions. 
+• ReAct and multi-agent demos show how an agent or team of agents should move from task → reasoning → action → output.
+• The Debate Agent makes students define a clear agent use case: two sides, separate roles, separate evidence sources, debate rounds, user modes, and final moderator summary.
+• It shows how to convert a problem statement into a scoped agent workflow.
+2. Agent Specification Files – SKILLS.md etc.
+25
+• LangChain agent exercise teaches that an agent needs a role, instructions, tools, tool descriptions, system prompt, and user message. 
+• Agent planning exercise teaches students to write the expected sequence of behavior before implementation.
+• The Debate Agent shows that agent behavior can be controlled through markdown files such as rules, role cards, and example turns.
+• This directly prepares students to create .md agent specification files for their assigned project.
+3. Prompting and Iteration Process
+20
+• Hallucination fixing exercise teaches better prompting, giving facts/context, step-by-step reasoning, and reducing vague instructions. 
+• Honest uncertainty exercise teaches students to write prompts that stop the AI from guessing.
+• The Debate Agent uses one detailed build prompt with requirements, constraints, acceptance criteria, UI rules, RAG rules, and output format.
+• It shows students how a strong prompt guides Cursor/Antigravity to generate a better agent prototype.
+4. Agent Behavior, Limitations and Output Quality
+20
+• Hallucination classification exercise teaches students to judge whether an answer is supported, factual, and faithful to instructions. 
+• Embeddings exercises teach meaning, similarity, and context. 
+• Chunking exercise teaches how context must be prepared. 
+• RAG and PageIndex demos teach grounded answering from retrieved information.
+• The Debate Agent combines these into one working pattern: each agent uses only its own document, retrieves evidence, avoids unsupported claims, follows a strict output format, and gives tagged evidence.
+• This prepares students to evaluate whether their own agents behave correctly, not just whether the app runs.
+5. Demo and Explanation
+15
+• All exercises require students to explain why an answer is right, wrong, unsupported, badly prompted, or logically sequenced. 
+• Agent demos show what a complete agent run looks like.
+• The Debate Agent gives students a concrete demo model: show the app, run a few turns, explain the markdown rule files, explain the prompt, show evidence grounding, and discuss limitations.

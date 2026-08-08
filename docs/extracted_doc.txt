@@ -1,0 +1,449 @@
+PROJECT REQUIREMENT DOCUMENT
+AI Job Application Assistant
+with Application Tracker
+Four-Tab AI-Powered Web Application  |  Student Build Guide
+
+1  Project Overview
+
+Job seekers often spend significant time analyzing job descriptions, tailoring resumes, and managing multiple job applications. This project aims to simplify that process by building an AI-powered Job Application Assistant.
+
+The system will help users:
+Upload their candidate profile
+Upload an optional reference resume for style inspiration
+Paste a job description (JD)
+Automatically extract required information
+Perform intelligent skill matching
+Generate a tailored resume PDF
+Simulate submitting the application
+Track application progress through stages
+Analyze rejection patterns and intelligently update the candidate profile
+View consolidated improvement insights across all rejections
+
+The application must contain four main tabs:
+Tab 1: Apply – Resume preparation and application submission simulation
+Tab 2: Tracking – Track status of all active job applications
+Tab 3: Not Selected – Per-rejection notes and analysis
+Tab 4: Global Analysis – Consolidated patterns across all rejections
+
+2  System Architecture
+
+The system has four functional tabs and one shared data layer.
+
+Data Storage
+All application data must be stored in a single JSON file on the local machine.
+
+This JSON file must track:
+All applications and their statuses
+Application status history
+Rejection notes and analysis results per application
+The current internal candidate profile state (evolving object)
+Profile update history after each rejection analysis
+
+Note for Students:
+You do not need to implement any database. A well-structured JSON file is sufficient for the entire project. This is intentional — keep it simple and focus on the AI logic.
+
+Clear All Data
+There must be a clearly visible Clear All Data button accessible from the app (recommended: in a header bar or settings area).
+
+When clicked:
+A confirmation popup must appear asking the user to confirm
+On confirmation, the JSON file is completely wiped
+All four tabs must reset to their empty state immediately
+
+TAB 1: APPLY – Resume Preparation and Submission
+
+3  Tab 1 – Apply
+
+3.1  Primary Inputs (Top Section)
+The Apply tab must start with three main inputs.
+
+Input 1 – Candidate Profile Upload
+The candidate profile must be uploaded as a document file.
+
+Accepted formats:
+.txt
+.pdf
+.docx
+
+The system must:
+Extract the text from the uploaded document
+Analyze the content to identify:
+Skills
+Experience level
+Projects
+Tools and technologies
+Domain knowledge
+
+A Profile Loaded indicator must appear after successful upload. Optionally, show an extracted profile text preview.
+
+Important — Living Profile:
+The candidate profile is a living document within the system. After each rejection analysis in Tab 3, the system’s internal understanding of the candidate is updated. All subsequent job applications will use this updated knowledge — not just the originally uploaded file.
+
+Input 2 – Reference Resume Upload (Optional)
+The user may upload a reference resume to guide the style and structure of the generated resume.
+
+Accepted formats:
+.pdf
+.docx
+
+The system must:
+Extract the layout structure, section ordering, tone, and formatting style from the reference resume
+Use this as a stylistic guide when generating the tailored resume via ReportLab
+Not copy content — only draw inspiration from structure and presentation
+
+A Reference Resume Loaded indicator must appear after upload. If no reference resume is uploaded, the system must fall back to a default professional resume template.
+
+Input 3 – Job Description (JD)
+A large textbox where the user pastes the job description copied from sources such as LinkedIn, company portals, or email listings. The system must read the JD and extract useful information.
+
+3.2  Required Fields After Input
+After the above inputs are provided, the system must populate and display the following fields:
+
+Field
+Description
+Company Name
+Text field. Auto-extract if possible, otherwise user fills manually
+Job Role
+Text field. Auto-extract if possible
+Skills Required
+Extracted from JD and displayed as editable list
+User Profile Skills
+Extracted from candidate profile (including any AI-updated knowledge)
+Skill Match Percentage
+Automatically calculated
+JD
+Full job description text
+Tailored Resume Preview Info
+Optional preview showing what the resume will emphasize
+Prepare / Download Resume Button
+Generates tailored PDF resume
+Submitted Button
+Marks the application as submitted after the user has applied offline
+
+Note on the Submitted Button:
+This button is labelled Submitted — not Submit. The user applies to the company outside the system first, then returns here and clicks Submitted to log that the application has been sent. The button confirms an action already taken, not an action being triggered.
+
+4  Intelligent Skill Match Analysis
+
+The system must perform intelligent matching between the candidate profile and the job description.
+
+Profile Analysis
+From the uploaded profile and any AI-updated knowledge, the system must infer:
+Skills
+Tools and technologies
+Experience level
+Project relevance
+Domain expertise
+
+JD Analysis
+From the JD text, the system must extract:
+Required skills
+Preferred skills
+Responsibilities
+Role seniority
+Technologies and tools
+
+Match Calculation
+The match percentage must consider:
+Skill overlap
+Project relevance
+Experience alignment
+Context similarity
+
+Example output:
+Skill Match: 72%
+
+Strong match:    Python, Machine Learning, APIs
+Moderate match:  Data Analysis
+Missing skills:  Docker, Kubernetes
+
+For Students:
+You may implement your own scoring logic but it must go beyond simple keyword matching. Consider semantic similarity, project context, and experience level when scoring.
+
+5  Resume Generation (Mandatory)
+
+The system must generate a tailored resume PDF using the Python ReportLab library.
+
+The resume must include:
+Candidate summary aligned to the job role
+Highlighted relevant skills
+Reordered skill sections based on JD importance
+Relevant project descriptions
+Optional section: Skills Relevant to This Role
+
+Reference Resume Styling:
+If a reference resume was uploaded, the layout, section ordering, and structural flow must be inspired by it. The generated resume must feel stylistically consistent with the reference.
+
+Updated Profile Handling:
+If the system’s internal understanding of the candidate has been updated due to prior rejections, the resume must naturally reflect those updated strengths. Skills identified as weaker through rejection analysis must simply be presented at an appropriate level or omitted from the highlights. The resume must always read as a clean, professional document — no internal system language, flags, scores, or annotations must ever appear in it.
+
+The resume must be downloadable.
+
+6  Button Activation Rules
+
+6.1  Prepare Resume Button
+Must remain disabled until ALL of the following conditions are met:
+
+Candidate profile uploaded successfully
+JD text pasted
+Company Name filled
+Job Role filled
+Skills Required extracted
+User Profile Skills extracted
+Skill Match Percentage calculated
+
+Only when all seven conditions are satisfied does the Prepare Resume button become active.
+
+6.2  Submitted Button
+Must remain disabled until:
+Resume has been successfully generated and downloaded
+All mandatory fields remain populated
+
+7  Application Submission Simulation
+
+The system does not perform real job submission. The intended flow is:
+
+User generates and downloads the resume from the Apply tab
+User applies to the company outside the system (LinkedIn, company portal, email, etc.)
+User returns to the Apply tab and clicks the Submitted button to log the application
+
+When Submitted is clicked:
+The application is added to the Tracking Tab
+Status automatically becomes Submitted
+The Submitted status must appear with a green blinking indicator
+
+TAB 2: TRACKING – Application Tracker
+
+8  Tab 2 – Tracking
+
+The Tracking tab must show a table of all active applications.
+
+8.1  Tracking Table Columns
+Column
+Description
+Company Name
+Company applied to
+Job Role
+Position applied for
+Skills Required
+Extracted from JD
+Skill Match %
+Match score from Tab 1
+JD
+Viewable job description
+Current Status
+Current application stage
+Action Buttons
+Stage control buttons
+
+8.2  Application Status Buttons
+Each application row must include four buttons:
+
+Submitted
+Interview
+Selected
+Not Selected
+
+8.3  Status Behavior
+Submitted
+Set automatically when the application is added from Tab 1
+Must display a green blinking indicator
+
+Interview
+Clickable after Submitted status is set
+Updates the status to Interview
+
+Selected
+Normally clicked after Interview. However, companies may select candidates directly without an interview.
+
+If the user clicks Selected while Interview has not been clicked, the system must show a confirmation popup:
+
+Candidate has not been marked for Interview.
+Do you want to mark as Selected directly?
+
+  [ OK ]     [ Cancel ]
+
+OK → update status to Selected
+Cancel → no change
+
+Not Selected
+This button must be always active at any stage — not just after Interview.
+
+When clicked, the system must show a confirmation popup:
+
+Are you sure you want to mark this application as Not Selected?
+This will move the application to the Not Selected tab
+for rejection analysis.
+
+  [ OK ]     [ Cancel ]
+
+OK → application disappears from Tracking Tab and moves to the Not Selected Tab
+Cancel → no change
+
+TAB 3: NOT SELECTED – Rejection Analysis and Profile Learning
+
+9  Tab 3 – Not Selected
+
+This tab is populated automatically whenever a user marks an application as Not Selected in the Tracking Tab.
+
+9.1  Not Selected Table Columns
+Column
+Description
+Company Name
+Company that rejected the application
+Job Title
+Role that was applied for
+Experience Match
+Skill match percentage as calculated in Tab 1
+Rejection Notes
+Free-text input area for the candidate
+Analyze Button
+Triggers AI analysis for that individual row
+
+9.2  Rejection Notes Input
+For each rejected application, there must be a large free-text input area where the candidate can enter any of the following:
+
+What happened during the interview or hiring process
+Questions they were unable to answer
+Skills or topics they felt underprepared in
+The body of a rejection email received from the company
+Any personal observations about why they may not have been selected
+Any feedback received from the recruiter or interviewer
+
+This field must be open-ended with no mandatory format. The candidate writes freely in their own words.
+
+9.3  Analyze Button (Per Row)
+Each rejection row must have an individual Analyze button. When clicked, the system must:
+
+Read the rejection notes entered for that company
+Cross-reference with the original JD and skill match data for that application
+Perform an AI-powered analysis to identify:
+Specific skill gaps revealed by the rejection
+Topics or technologies the candidate struggled with
+Experience areas that appear weaker than initially assessed
+Patterns in what the candidate could not answer
+Display a brief analysis summary for that row
+Update the system’s internal candidate profile state stored in the JSON file
+
+9.4  Intelligent Profile Update (Core Feature)
+This is one of the most important features of the entire system.
+
+When the Analyze button is clicked for a rejection:
+The AI must revise its internal model of the candidate stored in the JSON
+The originally uploaded profile is not treated as absolute truth
+Based on what is revealed in the rejection notes, the system must downgrade or annotate the relevant skills and experience areas in the internal profile
+The system may also identify new learning areas the candidate should focus on
+
+For all subsequent job applications in Tab 1:
+Skill matching must use the updated internal profile, not just the raw uploaded document
+Resume generation must reflect the refined understanding of the candidate’s actual strengths
+Skills identified as weaker must be presented at an appropriate level or de-emphasised in the resume — the resume must always look like a clean, professional document with no internal flags or system language visible
+
+Implementation Note for Students:
+Store a clear current_profile_state object in the JSON. This object is what Tab 1 reads from when performing match analysis and resume generation. It starts as a copy of the originally uploaded profile analysis and evolves after each rejection analysis in Tab 3.
+
+TAB 4: GLOBAL ANALYSIS – Cross-Rejection Patterns
+
+10  Tab 4 – Global Analysis
+
+10.1  Purpose
+While Tab 3 analyzes each rejection individually, Tab 4 looks across all rejection rows together and identifies bigger patterns that a single rejection alone might not reveal. This gives the candidate a consolidated, strategic view of what they need to improve before their next round of applications.
+
+10.2  What Global Analysis Must Show
+When the user visits this tab or clicks a Run Global Analysis button, the system must display:
+
+Recurring skill gaps — skills that appear as missing or weak across multiple rejections
+Common unanswered topics — questions or subject areas that came up repeatedly across different companies
+Consistent weak areas — experience or knowledge domains that show up as weak across multiple applications
+Summary recommendation — a plain-language paragraph telling the candidate what they should focus on improving before their next round
+
+10.3  Display
+The global analysis must be displayed as a readable, clean summary on the tab. It does not need to be a table — a well-structured text output with sections is sufficient.
+
+This tab must show a meaningful empty state message when there are not yet enough rejections to draw patterns from.
+
+11  Data Storage
+
+All data must be stored in a single local JSON file. Students do not need any database.
+
+The JSON must track:
+All applications (submitted, active, rejected)
+Application status history
+Rejection notes per application
+Per-rejection analysis results
+The current internal candidate profile state (evolving object)
+Profile update history — what changed after each rejection
+
+Clear All Data Button
+Must be clearly visible and accessible from anywhere in the app
+When clicked: show a confirmation popup
+On confirmation: wipe the JSON file completely
+All four tabs must immediately reflect the empty / reset state
+
+12  Expected User Flow
+
+Upload Candidate Profile  (+  optional Reference Resume)
+        |
+        v
+Paste Job Description
+        |
+        v
+System extracts skills using current internal profile state
+        |
+        v
+Skill match analysis performed
+        |
+        v
+Prepare Resume button activates
+        |
+        v
+Tailored Resume generated  (ReportLab PDF)
+        |
+        v
+User downloads resume and applies offline
+        |
+        v
+User returns and clicks Submitted  ->  application enters Tracking Tab
+        |
+        v
+User updates status:  Interview  ->  Selected  OR  Not Selected
+        |
+        v
+If Not Selected  (after confirmation popup):
+        |
+        v
+Application moves to Not Selected Tab
+        |
+        v
+Candidate enters rejection notes freely
+        |
+        v
+Analyze button clicked  ->  AI updates internal profile in JSON
+        |
+        v
+Tab 4 reflects updated global patterns across all rejections
+        |
+        v
+Next job application in Tab 1 uses the updated profile knowledge
+
+13  Deliverables
+
+Students must submit all of the following:
+
+Working application with all four tabs fully functional
+Resume generation using ReportLab, with reference resume style inspiration when uploaded
+Intelligent skill matching using the evolving internal profile
+Tracking table with status buttons and confirmation popups for both Selected (direct) and Not Selected
+Not Selected tab with free-text rejection notes and per-row Analyze button
+Intelligent profile update mechanism that evolves after each rejection analysis
+Global Analysis tab showing consolidated patterns across all rejections
+Single JSON file for all data storage with a working Clear All Data option
+Complete source code
+
+Documentation must include:
+System architecture overview
+Skill matching approach and how the internal profile evolves over time
+Resume generation logic and how updated profile knowledge influences it
+How global analysis works across multiple rejections
+
+End of Project Requirement Document

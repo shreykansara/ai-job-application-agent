@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project configurations
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Legacy API credentials
+API.txt
+
+# Local application data and candidate records
+data.json

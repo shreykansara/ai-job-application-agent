@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Job Application Assistant – Analyze resumes, match skills, generate tailored PDFs, and track applications intelligently.">
+    <title>AI Job Application Assistant</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <!-- ============= HEADER ============= -->
+    <header class="app-header">
+        <div class="app-logo">
+            <div class="app-logo-icon">🚀</div>
+            <div>
+                <h1>AI Job Application Assistant</h1>
+                <p>Smart Resume · Skill Match · Application Tracker</p>
+            </div>
+        </div>
+        <button class="btn-clear-all" id="btn-clear-all" onclick="showClearAllModal()">⟳ Clear All Data</button>
+    </header>
+
+    <!-- ============= TAB NAVIGATION ============= -->
+    <nav class="tab-nav" id="tab-nav">
+        <button class="tab-btn active" data-tab="apply" onclick="switchTab('apply')">
+            📄 Apply
+        </button>
+        <button class="tab-btn" data-tab="tracking" onclick="switchTab('tracking')">
+            📊 Tracking <span class="tab-badge" id="tracking-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="not-selected" onclick="switchTab('not-selected')">
+            ❌ Not Selected <span class="tab-badge" id="not-selected-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="global-analysis" onclick="switchTab('global-analysis')">
+            🔍 Global Analysis
+        </button>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: APPLY                                                  -->
+    <!-- ============================================================ -->
+    <div class="tab-panel active" id="panel-apply">
+
+        <!-- Primary Inputs -->
+        <div class="inputs-grid">
+            <!-- Candidate Profile Upload -->
+            <div class="card">
+                <div class="card-title"><span class="icon">👤</span> Candidate Profile</div>
+                <div class="card-subtitle">Upload your profile (.txt, .pdf, .docx)</div>
+                <div class="upload-zone" id="profile-upload-zone">
+                    <input type="file" id="profile-file-input" accept=".txt,.pdf,.docx" onchange="handleProfileUpload(this)">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-label">Click or drop your profile here</div>
+                    <div class="upload-hint">Accepted: .txt, .pdf, .docx</div>
+                    <div class="upload-status" id="profile-upload-status" style="display:none;">
+                        ✅ Profile Loaded
+                    </div>
+                </div>
+                <div class="profile-preview" id="profile-preview" style="display:none;"></div>
+            </div>
+
+            <!-- Reference Resume Upload (Optional) -->
+            <div class="card">
+                <div class="card-title"><span class="icon">🎨</span> Reference Resume <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400;">(Optional)</span></div>
+                <div class="card-subtitle">Upload a resume to guide styling (.pdf, .docx)</div>
+                <div class="upload-zone" id="ref-upload-zone">
+                    <input type="file" id="ref-file-input" accept=".pdf,.docx" onchange="handleRefUpload(this)">
+                    <div class="upload-icon">📑</div>
+                    <div class="upload-label">Click or drop reference resume</div>
+                    <div class="upload-hint">Accepted: .pdf, .docx</div>
+                    <div class="upload-status" id="ref-upload-status" style="display:none;">
+                        ✅ Reference Resume Loaded
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Description -->
+            <div class="card full-width">
+                <div class="card-title"><span class="icon">📋</span> Job Description</div>
+                <div class="card-subtitle">Paste the full job description from LinkedIn, company portal, or email</div>
+                <textarea class="form-input jd-input" id="jd-input" placeholder="Paste the complete job description here...&#10;&#10;Example:&#10;We are looking for a Software Engineer with 3+ years of experience in Python, REST APIs, and cloud technologies..."></textarea>
+                <div style="margin-top:12px; text-align:right;">
+                    <button class="btn btn-outline btn-sm" id="btn-analyze-jd" onclick="analyzeJD()">🔎 Analyze JD</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extracted Fields -->
+        <div class="card" id="extracted-fields-card">
+            <div class="card-title"><span class="icon">⚙️</span> Application Details</div>
+            <div class="card-subtitle">Auto-extracted & editable fields from JD and profile</div>
+
+            <div class="inputs-grid" style="margin-bottom:0;">
+                <div class="form-group">
+                    <label for="company-name">Company Name</label>
+                    <input class="form-input" id="company-name" type="text" placeholder="e.g. Google, Amazon...">
+                </div>
+                <div class="form-group">
+                    <label for="job-role">Job Role</label>
+                    <input class="form-input" id="job-role" type="text" placeholder="e.g. Software Engineer">
+                </div>
+                <div class="form-group">
+                    <label for="candidate-name">Candidate Name</label>
+                    <input class="form-input" id="candidate-name" type="text" placeholder="Your full name for the resume">
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Skills Required -->
+            <div class="match-breakdown">
+                <h4>📌 Skills Required (from JD)</h4>
+                <div class="skills-container" id="skills-required-container">
+                    <span class="skill-chip default" style="opacity:0.5;">Analyze JD to extract skills</span>
+                </div>
+            </div>
+
+            <!-- User Profile Skills -->
+            <div class="match-breakdown" style="margin-top:20px;">
+                <h4>👤 Your Profile Skills</h4>
+                <div class="skills-container" id="profile-skills-container">
+                    <span class="skill-chip default" style="opacity:0.5;">Upload profile to extract skills</span>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Skill Match % -->
+            <div class="match-meter-container" id="match-meter-area">
+                <div class="match-meter-label">
+                    <span>Skill Match</span>
+                    <span class="match-pct-value" id="match-pct-display">—%</span>
+                </div>
+                <div class="match-meter-track">
+                    <div class="match-meter-fill" id="match-meter-fill" style="width:0%;"></div>
+                </div>
+            </div>
+
+            <!-- Match Breakdown Chips -->
+            <div class="match-breakdown" id="match-breakdown-area" style="margin-top:16px; display:none;">
+                <h4>Match Breakdown</h4>
+                <div id="match-breakdown-chips"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="btn-prepare-resume" disabled onclick="prepareResume()">
+                📄 Prepare & Download Resume
+            </button>
+            <button class="btn btn-success" id="btn-submitted" disabled onclick="markSubmitted()">
+                ✅ Submitted
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: TRACKING                                               -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="panel-tracking">
+        <div class="card">
+            <div class="card-title"><span class="icon">📊</span> Application Tracker</div>
+            <div class="card-subtitle">Track the status of all your active job applications</div>
+
+            <div id="tracking-table-area">
+                <div class="empty-state" id="tracking-empty">
+                    <div class="empty-icon">📭</div>
+                    <h3>No Applications Yet</h3>
+                    <p>Submit your first application from the Apply tab to start tracking your progress.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: NOT SELECTED                                           -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="panel-not-selected">
+        <div class="card">
+            <div class="card-title"><span class="icon">❌</span> Rejection Analysis & Profile Learning</div>
+            <div class="card-subtitle">Enter rejection notes and let AI update your Living Profile</div>
+
+            <div id="not-selected-table-area">
+                <div class="empty-state" id="not-selected-empty">
+                    <div class="empty-icon">🎯</div>
+                    <h3>No Rejections Yet</h3>
+                    <p>Applications marked as "Not Selected" in the Tracking tab will appear here for AI-powered rejection analysis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 4: GLOBAL ANALYSIS                                        -->
+    <!-- ============================================================ -->
+    <div class="tab-panel" id="panel-global-analysis">
+        <div class="card">
+            <div class="card-title"><span class="icon">🔍</span> Global Cross-Rejection Analysis</div>
+            <div class="card-subtitle">Consolidated strategic insights across all your rejection experiences</div>
+
+            <div style="margin-bottom:20px; text-align:right;">
+                <button class="btn btn-primary btn-sm" onclick="runGlobalAnalysis()">🔄 Run Global Analysis</button>
+            </div>
+
+            <div id="global-analysis-content">
+                <div class="empty-state" id="global-analysis-empty">
+                    <div class="empty-icon">📈</div>
+                    <h3>Not Enough Data Yet</h3>
+                    <p>As applications are marked as "Not Selected" and analyzed in Tab 3, global cross-rejection insights will automatically populate here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /.app-wrapper -->
+
+<!-- ============= MODALS ============= -->
+
+<!-- Clear All Data Modal -->
+<div class="modal-overlay" id="modal-clear-all">
+    <div class="modal-box">
+        <h3>⚠️ Clear All Data</h3>
+        <p>Are you sure you want to clear all data? This will permanently wipe all applications, tracking history, rejection analysis, and your living profile. This action cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline btn-sm" onclick="hideModal('modal-clear-all')">Cancel</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmClearAll()">Clear All Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Selected Confirmation Modal -->
+<div class="modal-overlay" id="modal-selected-confirm">
+    <div class="modal-box">
+        <h3>📋 Confirm Direct Selection</h3>
+        <p>Candidate has not been marked for Interview. Do you want to mark as Selected directly?</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline btn-sm" onclick="hideModal('modal-selected-confirm')">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="modal-selected-ok">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Not Selected Confirmation Modal -->
+<div class="modal-overlay" id="modal-not-selected-confirm">
+    <div class="modal-box">
+        <h3>❌ Confirm Not Selected</h3>
+        <p>Are you sure you want to mark this application as Not Selected? This will move the application to the Not Selected tab for rejection analysis.</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline btn-sm" onclick="hideModal('modal-not-selected-confirm')">Cancel</button>
+            <button class="btn btn-danger btn-sm" id="modal-not-selected-ok">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- View JD Modal -->
+<div class="modal-overlay" id="modal-view-jd">
+    <div class="modal-box">
+        <h3>📋 Job Description</h3>
+        <div class="jd-modal-content" id="modal-jd-content"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline btn-sm" onclick="hideModal('modal-view-jd')">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

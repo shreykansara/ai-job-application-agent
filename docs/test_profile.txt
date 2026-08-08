@@ -1,0 +1,16 @@
+Name: John Developer
+Email: john@example.com
+
+Skills: Python, JavaScript, React, SQL, REST APIs, Git, Docker, Machine Learning, Data Analysis, FastAPI
+
+Experience Level: Mid-Level (3 years)
+
+Projects:
+- Built a full-stack web application using React and FastAPI with PostgreSQL database
+- Developed a machine learning prediction pipeline for customer churn analysis
+- Created automated CI/CD deployment scripts using Docker and GitHub Actions
+
+Education:
+B.Tech in Computer Science, XYZ University, 2021
+
+Tools: VS Code, Postman, Jupyter Notebook, Linux
