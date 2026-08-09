@@ -6,40 +6,40 @@
 
 /* ---- CSS Variables / Design Tokens ---- */
 :root {
-    --bg-primary: #030712;
-    --bg-secondary: rgba(17, 24, 39, 0.6);
+    --bg-primary: #020617;
+    --bg-secondary: rgba(15, 23, 42, 0.6);
     --bg-card: rgba(255, 255, 255, 0.03);
     --bg-card-hover: rgba(255, 255, 255, 0.05);
     --bg-glass: rgba(255, 255, 255, 0.02);
     --bg-input: rgba(15, 23, 42, 0.45);
     
     --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-accent: rgba(99, 102, 241, 0.25);
-    --border-focus: rgba(99, 102, 241, 0.6);
+    --border-accent: rgba(0, 116, 228, 0.25);
+    --border-focus: rgba(226, 184, 87, 0.6);
     
     --text-primary: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-muted: #64748b;
-    --text-accent: #a5b4fc;
+    --text-accent: #e2b857;
     
-    --accent-indigo: #6366f1;
-    --accent-indigo-light: #818cf8;
+    --accent-indigo: #0074e4;
+    --accent-indigo-light: #3b82f6;
     --accent-emerald: #10b981;
     --accent-emerald-light: #34d399;
-    --accent-amber: #f59e0b;
+    --accent-amber: #e2b857;
     --accent-rose: #f43f5e;
-    --accent-cyan: #06b6d4;
-    --accent-violet: #8b5cf6;
+    --accent-cyan: #0ea5e9;
+    --accent-violet: #6366f1;
     
-    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
-    --gradient-card: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%);
-    --gradient-success: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+    --gradient-primary: linear-gradient(135deg, #004a97 0%, #0074e4 50%, #e2b857 100%);
+    --gradient-card: linear-gradient(135deg, rgba(0, 74, 151, 0.12) 0%, rgba(226, 184, 87, 0.06) 100%);
+    --gradient-success: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
     --gradient-danger: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
     
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.12);
+    --shadow-glow: 0 0 25px rgba(0, 116, 228, 0.12);
     
     --radius-sm: 8px;
     --radius-md: 12px;

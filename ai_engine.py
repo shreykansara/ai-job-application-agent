@@ -58,7 +58,15 @@ def _parse_json_response(text: str) -> dict:
         text = re.sub(r"\n?```$", "", text)
     try:
         return json.loads(text)
-    except Exception:
+    except Exception as e:
+        print(f"[JSON Parse Error] {e} for text snippet:\n{text[:200]}")
+        # Try to find a JSON object using regex braces match
+        match = re.search(r"(\{.*\})", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except Exception as e2:
+                print(f"[JSON Parse Regex Retry Error] {e2}")
         return {}
 
 
@@ -107,72 +115,158 @@ def _infer_experience_level(text: str) -> str:
 def parse_candidate_profile(raw_text: str) -> Dict[str, Any]:
     """
     Parse candidate profile into structured Living Profile state using GPT.
-    Falls back to regex extraction if OpenAI unavailable.
+    Organizes it according to the requested extraction schema.
     """
     system = (
-        "You are an expert HR analyst and career coach. Parse the provided candidate "
-        "profile text and return a JSON object with these exact keys:\n"
-        "- skills: array of specific technical and domain skills (strings)\n"
-        "- skill_levels: object mapping each skill to one of: 'Expert', 'Proficient', 'Developing'\n"
-        "- experience_level: one of 'Entry-Level', 'Mid-Level', 'Senior'\n"
-        "- projects: array of up to 4 concise project description strings (1-2 sentences each)\n"
-        "- domain_knowledge: array of 3-5 domain/industry knowledge areas\n"
-        "- candidate_name: the candidate's full name if found, else empty string\n"
-        "- candidate_email: the candidate's email if found, else empty string\n"
-        "- candidate_phone: the candidate's phone if found, else empty string\n"
-        "- education: the candidate's highest education degree + institution if found\n"
-        "Return ONLY the JSON object, no extra text."
+        "You are a precise resume parser. Extract candidate details from the provided text into the JSON format matching the schema below.\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "- DO NOT fabricate, guess, or extrapolate any information that is not explicitly present in the candidate profile text. If a field, category, or section is not present in the text, leave it empty or as an empty array/object in the JSON schema.\n"
+        "- Extract all text for summaries, job descriptions, titles, dates, college, degree, achievements, and curriculars WORD-TO-WORD exactly as they appear in the original text. DO NOT paraphrase, rewrite, summarize, or alter the wording. Keep the original wording intact.\n"
+        "- Return ONLY the raw JSON object conforming to the schema below. Do not wrap it in markdown code blocks or add any conversational prologue or epilogue.\n\n"
+        "Schema:\n"
+        "{\n"
+        "  \"name\": \"Full Name (string, empty if not found)\",\n"
+        "  \"credentials\": {\n"
+        "     \"email\": \"Email address (string, empty if not found)\",\n"
+        "     \"phone\": \"Phone number (string, empty if not found)\",\n"
+        "     \"github\": \"GitHub URL (string, empty if not found)\",\n"
+        "     \"linkedin\": \"LinkedIn URL (string, empty if not found)\",\n"
+        "     \"portfolio\": \"Portfolio URL if present (string, empty if not found)\"\n"
+        "  },\n"
+        "  \"profile_summary\": \"A short professional summary extracted word-to-word (string, empty if not found)\",\n"
+        "  \"skills\": {\n"
+        "     \"Languages\": [\"List of programming languages (strings)\"],\n"
+        "     \"Frameworks\": [\"List of web/other frameworks (strings)\"],\n"
+        "     \"Tools\": [\"List of tools/technologies (strings)\"],\n"
+        "     \"Databases\": [\"List of databases (strings)\"]\n"
+        "  },\n"
+        "  \"projects\": [\n"
+        "     {\n"
+        "        \"title\": \"Project Name extracted word-to-word (string)\",\n"
+        "        \"description\": \"Description of the project extracted word-to-word (string)\",\n"
+        "        \"tech_used\": [\"Technologies used (strings)\"],\n"
+        "        \"links\": {\n"
+        "           \"source_code\": \"GitHub/source code URL (string, empty if not found)\",\n"
+        "           \"production\": \"Live URL (string, empty if not found)\"\n"
+        "        },\n"
+        "        \"dates\": \"Project duration or completion date extracted word-to-word (string)\"\n"
+        "     }\n"
+        "  ],\n"
+        "  \"work_experience\": [\n"
+        "     {\n"
+        "        \"company\": \"Company Name extracted word-to-word (string)\",\n"
+        "        \"job_role\": \"Job Title/Role extracted word-to-word (string)\",\n"
+        "        \"dates\": \"Employment dates/duration extracted word-to-word (string)\",\n"
+        "        \"project\": \"Key project/client name worked on extracted word-to-word (string, empty if not found)\",\n"
+        "        \"description\": \"Work responsibilities and achievements extracted word-to-word (string)\"\n"
+        "     }\n"
+        "  ],\n"
+        "  \"extra_curriculars\": [\n"
+        "     {\n"
+        "        \"title\": \"Title/Activity name extracted word-to-word (string)\",\n"
+        "        \"dates\": \"Dates extracted word-to-word (string)\",\n"
+        "        \"description\": \"Details extracted word-to-word (string)\"\n"
+        "     }\n"
+        "  ],\n"
+        "  \"achievements\": [\n"
+        "     {\n"
+        "        \"title\": \"Award/Achievement title extracted word-to-word (string)\",\n"
+        "        \"dates\": \"Date received extracted word-to-word (string)\",\n"
+        "        \"description\": \"Details extracted word-to-word (string)\"\n"
+        "     }\n"
+        "  ],\n"
+        "  \"education\": [\n"
+        "     {\n"
+        "        \"college\": \"College/University extracted word-to-word (string)\",\n"
+        "        \"degree\": \"Degree & major extracted word-to-word (string)\",\n"
+        "        \"cgpa\": \"CGPA or GPA (string, empty if not found)\",\n"
+        "        \"dates\": \"Graduation or study dates extracted word-to-word (string)\"\n"
+        "     }\n"
+        "  ]\n"
+        "}"
     )
 
-    raw_snippet = raw_text[:3500]
+    raw_snippet = raw_text[:4000]
     gpt_result = _gpt(system, f"Candidate Profile:\n{raw_snippet}")
     parsed = _parse_json_response(gpt_result)
 
-    # Validate / fill defaults
-    skills = parsed.get("skills") or _regex_extract_skills(raw_text)
-    if not skills:
-        skills = ["Python", "Problem Solving", "Software Development", "REST APIs", "SQL"]
+    # Fallback structure if GPT failed
+    if not parsed or not isinstance(parsed, dict):
+        parsed = {}
 
-    skill_levels = parsed.get("skill_levels") or {s: "Proficient" for s in skills}
-    # Ensure all skills have a level
-    for s in skills:
-        if s not in skill_levels:
-            skill_levels[s] = "Proficient"
+    # Extract name, credentials, summary
+    name = parsed.get("name") or ""
+    if not name:
+        for line in raw_text.split("\n")[:5]:
+            if len(line.strip()) > 3 and not any(k in line.lower() for k in ["resume", "profile", "cv", "email", "phone"]):
+                name = line.strip()
+                break
+
+    credentials = parsed.get("credentials") or {}
+    if not credentials.get("email"):
+        email_match = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", raw_text)
+        credentials["email"] = email_match.group(0) if email_match else ""
+    if not credentials.get("phone"):
+        phone_match = re.search(r"[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}", raw_text)
+        credentials["phone"] = phone_match.group(0) if phone_match else ""
+    for k in ["github", "linkedin", "portfolio"]:
+        if k not in credentials:
+            credentials[k] = ""
+
+    profile_summary = parsed.get("profile_summary") or ""
+
+    # Skills categories
+    skills = parsed.get("skills") or {}
+    if not isinstance(skills, dict):
+        skills = {"Languages": [], "Frameworks": [], "Tools": [], "Databases": []}
+    
+    # If empty, run regex fallback
+    has_skills = any(isinstance(v, list) and len(v) > 0 for v in skills.values())
+    if not has_skills:
+        extracted_flat = _regex_extract_skills(raw_text)
+        skills = {
+            "Languages": [s for s in extracted_flat if s in ["Python", "JavaScript", "TypeScript", "Java", "C++", "C#", "Go", "Rust"]],
+            "Frameworks": [s for s in extracted_flat if s in ["FastAPI", "Flask", "Django", "React", "Next.js", "Vue", "Angular", "Node.js", "Express", "Spring Boot", "TailwindCSS"]],
+            "Tools": [s for s in extracted_flat if s in ["Docker", "Kubernetes", "Git", "GitHub", "AWS", "Azure", "GCP", "Linux", "CI/CD"]],
+            "Databases": [s for s in extracted_flat if s in ["SQL", "PostgreSQL", "MongoDB", "Redis", "Kafka", "Elasticsearch"]]
+        }
 
     projects = parsed.get("projects") or []
-    if not projects:
-        # Try simple regex extraction
-        lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
-        in_proj = False
-        for line in lines:
-            if "project" in line.lower() and len(line) < 30:
-                in_proj = True
-                continue
-            if in_proj:
-                if any(h in line.lower() for h in ["education", "experience", "skills", "summary"]):
-                    break
-                if len(line) > 10:
-                    projects.append(line)
-        if not projects:
-            projects = [
-                "Full-stack web application with REST API and database persistence.",
-                "Machine learning data analysis pipeline for automated reporting.",
-            ]
+    if not isinstance(projects, list):
+        projects = []
 
+    work_experience = parsed.get("work_experience") or []
+    if not isinstance(work_experience, list):
+        work_experience = []
+
+    extra_curriculars = parsed.get("extra_curriculars") or []
+    if not isinstance(extra_curriculars, list):
+        extra_curriculars = []
+
+    achievements = parsed.get("achievements") or []
+    if not isinstance(achievements, list):
+        achievements = []
+
+    education = parsed.get("education") or []
+    if not isinstance(education, list):
+        education = []
+
+    # Return complete structure conforming to schema
     return {
         "raw_text": raw_text[:2000],
+        "name": name,
+        "credentials": credentials,
+        "profile_summary": profile_summary,
         "skills": skills,
-        "skill_levels": skill_levels,
-        "weak_skills": [],
-        "struggle_topics": [],
+        "projects": projects,
+        "work_experience": work_experience,
+        "extra_curriculars": extra_curriculars,
+        "achievements": achievements,
+        "education": education,
+        "weak_skills": parsed.get("weak_skills") or [],
+        "struggle_topics": parsed.get("struggle_topics") or [],
         "experience_level": parsed.get("experience_level") or _infer_experience_level(raw_text),
-        "projects": projects[:4],
-        "domain_knowledge": parsed.get("domain_knowledge") or ["Software Engineering", "Web Applications", "Data Processing"],
-        "candidate_name": parsed.get("candidate_name", ""),
-        "candidate_email": parsed.get("candidate_email", ""),
-        "candidate_phone": parsed.get("candidate_phone", ""),
-        "education": parsed.get("education", ""),
-        "rejection_learnings_count": 0,
+        "rejection_learnings_count": parsed.get("rejection_learnings_count") or 0
     }
 
 
@@ -246,7 +340,17 @@ def calculate_skill_match(
     """
     Compute semantic skill match between Living Profile and JD requirements using GPT.
     """
-    user_skills = profile_state.get("skills", [])
+    skills_val = profile_state.get("skills", [])
+    if isinstance(skills_val, dict):
+        user_skills = []
+        for cat, items in skills_val.items():
+            if isinstance(items, list):
+                user_skills.extend(items)
+            elif isinstance(items, str):
+                user_skills.append(items)
+    else:
+        user_skills = skills_val
+
     weak_skills = set(profile_state.get("weak_skills", []))
     skill_levels = profile_state.get("skill_levels", {})
 
@@ -287,7 +391,7 @@ def calculate_skill_match(
     if not strong_matches and not moderate_matches and not missing_skills:
         for req in jd_skills:
             if req in user_skills:
-                if req in weak_skills or skill_levels.get(req) == "Developing":
+                if req in weak_skills or (isinstance(skill_levels, dict) and skill_levels.get(req) == "Developing"):
                     moderate_matches.append(req)
                 else:
                     strong_matches.append(req)
@@ -331,6 +435,17 @@ def analyze_rejection_notes(
     GPT-powered rejection analysis that updates the Living Profile.
     Identifies skill gaps and struggle topics from rejection notes.
     """
+    skills_val = profile_state.get("skills", [])
+    if isinstance(skills_val, dict):
+        user_skills = []
+        for cat, items in skills_val.items():
+            if isinstance(items, list):
+                user_skills.extend(items)
+            elif isinstance(items, str):
+                user_skills.append(items)
+    else:
+        user_skills = skills_val
+
     system = (
         "You are an expert career coach specializing in technical interview failure analysis. "
         "Given a candidate's rejection notes (interview feedback, questions missed, recruiter notes), "
@@ -346,7 +461,7 @@ def analyze_rejection_notes(
         f"Company: {company_name}\n"
         f"Job Role: {job_role}\n"
         f"JD Required Skills: {', '.join(jd_required_skills)}\n"
-        f"Candidate's Current Skills: {', '.join(profile_state.get('skills', []))}\n"
+        f"Candidate's Current Skills: {', '.join(user_skills)}\n"
         f"Rejection Notes:\n{rejection_notes}"
     )
 
@@ -390,12 +505,25 @@ def analyze_rejection_notes(
     existing_struggle = set(updated_profile.get("struggle_topics", []))
     skill_levels = dict(updated_profile.get("skill_levels", {}))
 
+    flat_skills = []
+    skills_obj = updated_profile.get("skills")
+    if isinstance(skills_obj, dict):
+        for cat, items in skills_obj.items():
+            if isinstance(items, list):
+                flat_skills.extend(items)
+    elif isinstance(skills_obj, list):
+        flat_skills = skills_obj
+
     for skill in weakness_identified:
         existing_weak.add(skill)
         skill_levels[skill] = "Needs Practice / Developing"
-        # If skill is not in profile skills, add it as a gap
-        if skill not in updated_profile.get("skills", []):
-            updated_profile.setdefault("skills", [])
+        if skill not in flat_skills:
+            if isinstance(skills_obj, dict):
+                skills_obj.setdefault("Tools", []).append(skill)
+                flat_skills.append(skill)
+            else:
+                updated_profile.setdefault("skills", []).append(skill)
+                flat_skills.append(skill)
 
     for topic in struggled_topics:
         existing_struggle.add(topic)
@@ -428,7 +556,7 @@ def analyze_rejection_notes(
 # WORKFLOW 4: Global Cross-Rejection Analysis
 # ============================================================
 
-def compute_global_analysis(applications: List[Dict[str, Any]]) -> Dict[str, Any]:
+def compute_global_analysis(applications: List[Dict[str, Any]], upskilled_skills: List[str] = None) -> Dict[str, Any]:
     """
     GPT-powered cross-rejection synthesis across all rejected applications.
     """
@@ -449,11 +577,20 @@ def compute_global_analysis(applications: List[Dict[str, Any]]) -> Dict[str, Any
     topic_counts: Dict[str, int] = {}
     companies_analyzed = []
 
+    upskilled_set = {s.lower().strip() for s in (upskilled_skills or [])}
+    has_any_raw_data = False
+
     for app in rejected_apps:
         companies_analyzed.append(app.get("company_name", "Unknown"))
         analysis = app.get("rejection_analysis", {})
-        gaps = analysis.get("identified_skill_gaps", [])
-        topics = analysis.get("struggle_topics", [])
+        raw_gaps = analysis.get("identified_skill_gaps", [])
+        raw_topics = analysis.get("struggle_topics", [])
+        
+        if raw_gaps or raw_topics:
+            has_any_raw_data = True
+            
+        gaps = [g for g in raw_gaps if g.lower().strip() not in upskilled_set]
+        topics = [t for t in raw_topics if t.lower().strip() not in upskilled_set]
         notes = app.get("rejection_notes", "")
 
         for g in gaps:
@@ -474,9 +611,9 @@ def compute_global_analysis(applications: List[Dict[str, Any]]) -> Dict[str, Any
     gaps_list = [f"{s} ({c} rejection{'s' if c > 1 else ''})" for s, c in recurring_skill_gaps[:5]]
     topics_list = [f"{t} ({c} company)" for t, c in common_unanswered_topics[:5]]
 
-    if not gaps_list:
+    if not gaps_list and not has_any_raw_data:
         gaps_list = ["Advanced System Architecture", "Production DevOps / Containerization"]
-    if not topics_list:
+    if not topics_list and not has_any_raw_data:
         topics_list = ["Live Technical Coding & Algorithm Probing", "Detailed System Scalability Questions"]
 
     # GPT strategic synthesis

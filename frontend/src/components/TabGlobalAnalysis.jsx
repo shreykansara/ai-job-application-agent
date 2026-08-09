@@ -1,19 +1,40 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  Globe, TrendingUp, AlertTriangle, AlertOctagon, HelpCircle, 
+  Settings, Info, Sparkles, TrendingDown, RefreshCw, BarChart2
+} from 'lucide-react';
 
 export default function TabGlobalAnalysis({ applications, showToast }) {
   const [loading, setLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState(null);
 
-  // Fetch analysis data
-  const runGlobalAnalysis = async () => {
+  // Load saved analysis data on mount
+  const loadGlobalAnalysis = async () => {
     setLoading(true);
     try {
       const resp = await fetch('/api/global-analysis');
       if (resp.ok) {
         const data = await resp.json();
         setAnalysisData(data);
+      }
+    } catch (err) {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Run/Regenerate analysis data (on button click)
+  const runGlobalAnalysis = async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch('/api/run-global-analysis', { method: 'POST' });
+      if (resp.ok) {
+        const data = await resp.json();
+        setAnalysisData(data);
+        showToast('Global analysis successfully updated.');
       } else {
-        showToast('Failed to run global analysis.', 'error');
+        showToast('Failed to compile global analysis.', 'error');
       }
     } catch (err) {
       showToast('Error: ' + err.message, 'error');
@@ -24,7 +45,7 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
 
   // Run automatically on mount
   useEffect(() => {
-    runGlobalAnalysis();
+    loadGlobalAnalysis();
   }, []);
 
   const renderContent = () => {
@@ -41,7 +62,9 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
     if (!analysisData || !analysisData.has_data) {
       return (
         <div className="empty-state" id="global-analysis-empty">
-          <div className="empty-icon">📈</div>
+          <div className="empty-icon" style={{ color: 'var(--text-muted)' }}>
+            <TrendingUp size={48} />
+          </div>
           <h3>Not Enough Data Yet</h3>
           <p>
             {analysisData?.message ||
@@ -65,7 +88,7 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
         {/* Recurring Skill Gaps */}
         <div className="analysis-section" style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            🔴 Recurring Skill Gaps
+            <AlertOctagon size={18} /> Recurring Skill Gaps
           </h3>
           {recurring_skill_gaps.length === 0 ? (
             <p style={{ color: 'var(--text-muted)' }}>No recurring skill gaps identified yet.</p>
@@ -81,7 +104,7 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
         {/* Common Unanswered Topics */}
         <div className="analysis-section" style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-amber)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            ❓ Common Unanswered Topics
+            <HelpCircle size={18} /> Common Unanswered Topics
           </h3>
           {common_unanswered_topics.length === 0 ? (
             <p style={{ color: 'var(--text-muted)' }}>No common unanswered topics identified yet.</p>
@@ -97,7 +120,7 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
         {/* Consistent Weak Areas */}
         <div className="analysis-section" style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            ⚠️ Consistent Weak Areas
+            <TrendingDown size={18} /> Consistent Weak Areas
           </h3>
           {consistent_weak_areas.length === 0 ? (
             <p style={{ color: 'var(--text-muted)' }}>No consistent weak areas identified yet.</p>
@@ -113,7 +136,7 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
         {/* Strategic Recommendation */}
         <div className="analysis-section" style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-indigo-light)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            💡 Strategic Recommendation
+            <Sparkles size={18} /> Strategic Recommendation
           </h3>
           <div className="analysis-recommendation" style={{ padding: '16px', background: 'var(--bg-glass)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
             <strong style={{ color: 'var(--text-accent)' }}>Action Plan:</strong> {summary_recommendation || 'No recommendation available yet.'}
@@ -132,18 +155,22 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
   return (
     <div className="tab-panel active">
       <div className="card">
-        <div className="card-title"><span className="icon">🔍</span> Global Cross-Rejection Analysis</div>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Globe size={18} style={{ color: 'var(--text-accent)' }} /> Global Cross-Rejection Analysis
+        </div>
         <div className="card-subtitle">Consolidated strategic insights across all your rejection experiences</div>
 
         <div style={{ marginBottom: '20px', textAlign: 'right' }}>
-          <button className="btn btn-primary btn-sm" onClick={runGlobalAnalysis} disabled={loading}>
+          <button className="btn btn-primary btn-sm" onClick={runGlobalAnalysis} disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             {loading ? (
               <>
                 <span className="spinner" style={{ marginRight: '6px' }}></span>
                 Analyzing...
               </>
             ) : (
-              '🔄 Run Global Analysis'
+              <>
+                <RefreshCw size={14} /> Run Global Analysis
+              </>
             )}
           </button>
         </div>

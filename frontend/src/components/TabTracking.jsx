@@ -1,4 +1,7 @@
 import React from 'react';
+import { 
+  BarChart2, Inbox, Calendar, Star, XCircle, CheckCircle, ExternalLink
+} from 'lucide-react';
 
 export default function TabTracking({
   applications,
@@ -14,14 +17,32 @@ export default function TabTracking({
   const getStatusBadge = (status) => {
     if (status === 'Submitted') {
       return (
-        <span className="status-badge submitted">
+        <span className="status-badge submitted" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
           <span className="status-submitted-blink"></span> Submitted
         </span>
       );
     }
-    if (status === 'Interview') return <span className="status-badge interview">🎤 Interview</span>;
-    if (status === 'Selected') return <span className="status-badge selected">⭐ Selected</span>;
-    if (status === 'Not Selected') return <span className="status-badge not-selected">❌ Not Selected</span>;
+    if (status === 'Interview') {
+      return (
+        <span className="status-badge interview" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Calendar size={12} /> Interview
+        </span>
+      );
+    }
+    if (status === 'Selected') {
+      return (
+        <span className="status-badge selected" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Star size={12} /> Selected
+        </span>
+      );
+    }
+    if (status === 'Not Selected') {
+      return (
+        <span className="status-badge not-selected" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <XCircle size={12} /> Not Selected
+        </span>
+      );
+    }
     return <span className="status-badge">{status}</span>;
   };
 
@@ -77,12 +98,16 @@ export default function TabTracking({
   return (
     <div className="tab-panel active">
       <div className="card">
-        <div className="card-title"><span className="icon">📊</span> Application Tracker</div>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <BarChart2 size={18} style={{ color: 'var(--text-accent)' }} /> Application Tracker
+        </div>
         <div className="card-subtitle">Track the status of all your active job applications</div>
 
         {activeApps.length === 0 ? (
           <div className="empty-state" id="tracking-empty">
-            <div className="empty-icon">📭</div>
+            <div className="empty-icon" style={{ color: 'var(--text-muted)' }}>
+              <Inbox size={48} />
+            </div>
             <h3>No Applications Yet</h3>
             <p>Submit your first application from the Apply tab to start tracking your progress.</p>
           </div>
@@ -126,25 +151,25 @@ export default function TabTracking({
                       </td>
                       <td><strong>{app.skill_match_pct}%</strong></td>
                       <td>
-                        <button className="btn btn-outline btn-sm" onClick={() => setViewJdContent(app.jd_text)}>
-                          View
+                        <button className="btn btn-outline btn-sm" onClick={() => setViewJdContent(app.jd_text)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <ExternalLink size={12} /> View
                         </button>
                       </td>
                       <td>{getStatusBadge(app.status)}</td>
                       <td>
                         <div className="action-cell">
                           {app.status === 'Submitted' && (
-                            <button className="btn btn-outline btn-sm" onClick={() => updateStatus(app.id, 'Interview')}>
-                              🎤 Interview
+                            <button className="btn btn-outline btn-sm" onClick={() => updateStatus(app.id, 'Interview')} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Calendar size={12} /> Interview
                             </button>
                           )}
                           {app.status !== 'Selected' && (
-                            <button className="btn btn-outline btn-sm" onClick={() => handleMarkSelected(app.id, app.status)}>
-                              ⭐ Selected
+                            <button className="btn btn-outline btn-sm" onClick={() => handleMarkSelected(app.id, app.status)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Star size={12} /> Selected
                             </button>
                           )}
-                          <button className="btn btn-sm btn-danger" onClick={() => handleMarkNotSelected(app.id)}>
-                            ❌ Not Selected
+                          <button className="btn btn-sm btn-danger" onClick={() => handleMarkNotSelected(app.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <XCircle size={12} /> Not Selected
                           </button>
                         </div>
                       </td>

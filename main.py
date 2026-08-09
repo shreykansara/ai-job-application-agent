@@ -70,7 +70,12 @@ async def upload_profile(file: UploadFile = File(...)):
 
     content = await file.read()
     raw_text = extract_text_from_file(content, file.filename)
+    print(f"[Upload Profile] Filename: {file.filename}, Extracted text length: {len(raw_text)}")
+    print(f"[Upload Profile] Raw snippet: {raw_text[:250]}")
+    
     profile = parse_candidate_profile(raw_text)
+    print(f"[Upload Profile] Parsed profile structure keys: {list(profile.keys()) if profile else None}")
+    print(f"[Upload Profile] Parsed name: {profile.get('name')}, parsed email: {profile.get('credentials', {}).get('email')}")
 
     data = load_data()
     if data.get("current_profile_state") is None:
@@ -90,8 +95,9 @@ async def upload_profile(file: UploadFile = File(...)):
             "rejection_learnings_count", 0
         )
         # Update skill levels for weak skills
-        for ws in profile["weak_skills"]:
-            profile["skill_levels"][ws] = "Needs Practice / Developing"
+        if "skill_levels" in profile:
+            for ws in profile["weak_skills"]:
+                profile["skill_levels"][ws] = "Needs Practice / Developing"
         data["current_profile_state"] = profile
 
     data["original_profile_text"] = raw_text[:3000]
@@ -103,9 +109,19 @@ async def upload_profile(file: UploadFile = File(...)):
         "profile_preview": raw_text[:500],
         "skills": profile["skills"],
         "experience_level": profile["experience_level"],
-        "candidate_name": profile.get("candidate_name", ""),
-        "candidate_email": profile.get("candidate_email", ""),
+        "candidate_name": profile.get("name") or profile.get("candidate_name", ""),
+        "candidate_email": profile.get("credentials", {}).get("email") or profile.get("candidate_email", ""),
+        "profile": profile,
     }
+
+
+@app.post("/api/save-profile")
+async def save_profile(profile: dict):
+    """Save the fully edited structured profile state."""
+    data = load_data()
+    data["current_profile_state"] = profile
+    save_data(data)
+    return {"status": "success", "profile": profile}
 
 
 @app.post("/api/upload-reference-resume")
@@ -338,12 +354,69 @@ async def analyze_rejection(app_id: str = Form(...)):
 
 
 @app.get("/api/global-analysis")
-async def global_analysis():
-    """Compute and return cross-rejection global analysis."""
+async def get_global_analysis():
+    """Return the saved global analysis from data.json."""
+    data = load_data()
+    saved = data.get("global_analysis")
+    if not saved:
+        rejected_apps = [a for a in data.get("applications", []) if a.get("status") == "Not Selected"]
+        if not rejected_apps:
+            return {
+                "has_data": False,
+                "message": (
+                    "Not enough rejection data yet. As applications are marked as 'Not Selected' "
+                    "and analyzed in Tab 3, global cross-rejection insights will automatically populate here."
+                ),
+            }
+        else:
+            return {
+                "has_data": False,
+                "message": "Global analysis has not been generated yet. Click 'Run Global Analysis' to compile strategic insights."
+            }
+    return saved
+
+
+@app.post("/api/run-global-analysis")
+async def run_global_analysis():
+    """Compute, save, and return the global cross-rejection analysis."""
     data = load_data()
     apps = data.get("applications", [])
-    result = compute_global_analysis(apps)
+    profile = data.get("current_profile_state") or {}
+    upskilled = profile.get("upskilled_skills", [])
+    
+    result = compute_global_analysis(apps, upskilled)
+    
+    if result.get("has_data"):
+        data["global_analysis"] = result
+        save_data(data)
+        
     return result
+
+
+@app.post("/api/toggle-upskilled")
+async def toggle_upskilled(skill: str = Form(...)):
+    """Toggle upskilled status of a skill gap in candidate profile."""
+    data = load_data()
+    profile = data.get("current_profile_state")
+    if not profile:
+        raise HTTPException(400, "No candidate profile found.")
+    
+    if "upskilled_skills" not in profile:
+        profile["upskilled_skills"] = []
+        
+    if skill in profile["upskilled_skills"]:
+        profile["upskilled_skills"].remove(skill)
+        action = "removed"
+    else:
+        profile["upskilled_skills"].append(skill)
+        action = "added"
+        
+    save_data(data)
+    return {
+        "status": "success",
+        "action": action,
+        "upskilled_skills": profile["upskilled_skills"]
+    }
 
 
 @app.post("/api/clear-all-data")
@@ -355,6 +428,7 @@ async def clear_all_data():
         "profile_history": [],
         "reference_resume_style": None,
         "original_profile_text": None,
+        "global_analysis": None,
     }
     save_data(empty)
     return {"status": "success", "message": "All data cleared."}

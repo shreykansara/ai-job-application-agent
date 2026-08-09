@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  FileText, Search, Settings, Briefcase, GraduationCap, 
+  CheckCircle2, Download, Send, AlertTriangle, Play, Sparkles, User, Percent, HelpCircle
+} from 'lucide-react';
 
 export default function TabApply({
   currentProfileState,
@@ -24,7 +28,7 @@ export default function TabApply({
 
   // ---- Matching Results ----
   const [skillsRequired, setSkillsRequired] = useState([]);
-  const [profileSkills, setProfileSkills] = useState(currentProfileState?.skills || []);
+  const [profileSkills, setProfileSkills] = useState([]);
   const [skillMatchPct, setSkillMatchPct] = useState(0);
   const [matchCalculated, setMatchCalculated] = useState(false);
   const [strongMatches, setStrongMatches] = useState([]);
@@ -40,9 +44,22 @@ export default function TabApply({
   // Sync profile skills when global profile changes
   useEffect(() => {
     if (currentProfileState) {
-      setProfileSkills(currentProfileState.skills || []);
-      if (currentProfileState.candidate_name && !candidateName) {
-        setCandidateName(currentProfileState.candidate_name);
+      let flat = [];
+      const skillsVal = currentProfileState.skills || {};
+      if (typeof skillsVal === 'object' && !Array.isArray(skillsVal)) {
+        for (const cat in skillsVal) {
+          if (Array.isArray(skillsVal[cat])) {
+            flat = [...flat, ...skillsVal[cat]];
+          }
+        }
+      } else {
+        flat = skillsVal;
+      }
+      setProfileSkills(flat);
+      
+      const nameVal = currentProfileState.name || currentProfileState.candidate_name || '';
+      if (nameVal && !candidateName) {
+        setCandidateName(nameVal);
       }
     } else {
       setProfileSkills([]);
@@ -261,68 +278,12 @@ export default function TabApply({
 
   return (
     <div className="tab-panel active">
-      <div className="inputs-grid">
-        {/* Candidate Profile Card */}
-        <div className="card">
-          <div className="card-title"><span className="icon">👤</span> Candidate Profile</div>
-          <div className="card-subtitle">Upload your profile (.txt, .pdf, .docx)</div>
-          <div className={`upload-zone ${isProfileLoaded ? 'loaded' : ''}`}>
-            <input
-              type="file"
-              id="profile-file-input"
-              accept=".txt,.pdf,.docx"
-              onChange={handleProfileUpload}
-              disabled={uploadingProfile}
-            />
-            <div className="upload-icon">📁</div>
-            <div className="upload-label">
-              {uploadingProfile ? 'Uploading...' : 'Click or drop your profile here'}
-            </div>
-            <div className="upload-hint">Accepted: .txt, .pdf, .docx</div>
-            {isProfileLoaded && (
-              <div className="upload-status" id="profile-upload-status" style={{ display: 'flex' }}>
-                ✅ Profile Loaded {profileFilename ? `— ${profileFilename}` : '(from saved data)'}
-              </div>
-            )}
-          </div>
-          {profilePreviewText && (
-            <div className="profile-preview" style={{ display: 'block', maxHeight: '150px', overflowY: 'auto' }}>
-              {profilePreviewText}
-            </div>
-          )}
-        </div>
-
-        {/* Reference Resume Card */}
-        <div className="card">
-          <div className="card-title">
-            <span className="icon">🎨</span> Reference Resume{' '}
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>(Optional)</span>
-          </div>
-          <div className="card-subtitle">Upload a resume to guide styling (.pdf, .docx)</div>
-          <div className={`upload-zone ${referenceResumeStyle ? 'loaded' : ''}`}>
-            <input
-              type="file"
-              id="ref-file-input"
-              accept=".pdf,.docx"
-              onChange={handleRefUpload}
-              disabled={uploadingRef}
-            />
-            <div className="upload-icon">📑</div>
-            <div className="upload-label">
-              {uploadingRef ? 'Uploading...' : 'Click or drop reference resume'}
-            </div>
-            <div className="upload-hint">Accepted: .pdf, .docx</div>
-            {referenceResumeStyle && (
-              <div className="upload-status" id="ref-upload-status" style={{ display: 'flex' }}>
-                ✅ Reference Resume Loaded {refFilename ? `— ${refFilename}` : '(from saved data)'}
-              </div>
-            )}
-          </div>
-        </div>
-
+      <div className="inputs-grid" style={{ gridTemplateColumns: '1fr' }}>
         {/* Job Description Card */}
         <div className="card full-width">
-          <div className="card-title"><span className="icon">📋</span> Job Description</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileText size={18} style={{ color: 'var(--text-accent)' }} /> Job Description
+          </div>
           <div className="card-subtitle">Paste the full job description from LinkedIn, company portal, or email</div>
           <textarea
             className="form-input jd-input"
@@ -337,6 +298,7 @@ export default function TabApply({
               id="btn-analyze-jd"
               onClick={handleAnalyzeJd}
               disabled={analyzingJd}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               {analyzingJd ? (
                 <>
@@ -344,7 +306,9 @@ export default function TabApply({
                   Analyzing...
                 </>
               ) : (
-                '🔎 Analyze JD'
+                <>
+                  <Search size={14} /> Analyze JD
+                </>
               )}
             </button>
           </div>
@@ -353,7 +317,9 @@ export default function TabApply({
 
       {/* Extracted Fields Card */}
       <div className="card" id="extracted-fields-card">
-        <div className="card-title"><span className="icon">⚙️</span> Application Details</div>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Settings size={18} style={{ color: 'var(--text-accent)' }} /> Application Details
+        </div>
         <div className="card-subtitle">Auto-extracted & editable fields from JD and profile</div>
 
         <div className="inputs-grid" style={{ marginBottom: 0 }}>
@@ -396,7 +362,9 @@ export default function TabApply({
 
         {/* Skills Required */}
         <div className="match-breakdown">
-          <h4>📌 Skills Required (from JD)</h4>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} style={{ color: 'var(--text-accent)' }} /> Required Skills (from JD)
+          </h4>
           <div className="skills-container" id="skills-required-container">
             {skillsRequired.length === 0 ? (
               <span className="skill-chip default" style={{ opacity: 0.5 }}>
@@ -419,7 +387,9 @@ export default function TabApply({
 
         {/* User Profile Skills */}
         <div className="match-breakdown" style={{ marginTop: '20px' }}>
-          <h4>👤 Your Profile Skills</h4>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <User size={16} style={{ color: 'var(--text-accent)' }} /> Your Profile Skills
+          </h4>
           <div className="skills-container" id="profile-skills-container">
             {profileSkills.length === 0 ? (
               <span className="skill-chip default" style={{ opacity: 0.5 }}>
@@ -507,6 +477,7 @@ export default function TabApply({
           id="btn-prepare-resume"
           disabled={!canPrepareResume || preparingPdf}
           onClick={handlePrepareResume}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
         >
           {preparingPdf ? (
             <>
@@ -514,7 +485,9 @@ export default function TabApply({
               Generating PDF...
             </>
           ) : (
-            '📄 Prepare & Download Resume'
+            <>
+              <Download size={16} /> Prepare & Download Resume
+            </>
           )}
         </button>
         <button
@@ -522,6 +495,7 @@ export default function TabApply({
           id="btn-submitted"
           disabled={!canSubmit || submitting}
           onClick={handleSubmitted}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
         >
           {submitting ? (
             <>
@@ -529,7 +503,9 @@ export default function TabApply({
               Submitting...
             </>
           ) : (
-            '✅ Submitted'
+            <>
+              <Send size={16} /> Submitted
+            </>
           )}
         </button>
       </div>
