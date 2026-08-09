@@ -94,12 +94,12 @@ export default function App() {
       {/* ============= HEADER ============= */}
       <header className="app-header">
         <div className="app-logo">
-          <div className="app-logo-icon" style={{ overflow: 'hidden', padding: '4px', background: 'rgba(255, 255, 255, 0.05)' }}>
+          <div className="app-logo-icon" style={{ overflow: 'hidden', padding: '4px', background: '#2D2723', borderRadius: '8px', border: '1px solid rgba(224, 140, 157, 0.3)' }}>
             <img src={logoImg} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
-            <h1>AI Job Application Assistant</h1>
-            <p>Smart Resume · Skill Match · Application Tracker</p>
+            <h1>Career Compass</h1>
+            <p>Navigate your path from application to offer, effortlessly.</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>

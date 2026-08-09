@@ -19,7 +19,7 @@ from ai_engine import (
 )
 from resume_generator import generate_pdf_resume
 
-app = FastAPI(title="AI Job Application Assistant")
+app = FastAPI(title="Career Compass")
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
@@ -172,6 +172,7 @@ async def analyze_jd(jd_text: str = Form(...)):
         "strong_matches": match_result["strong_matches"],
         "moderate_matches": match_result["moderate_matches"],
         "missing_skills": match_result["missing_skills"],
+        "swot": match_result.get("swot"),
     }
 
 
@@ -384,7 +385,7 @@ async def run_global_analysis():
     profile = data.get("current_profile_state") or {}
     upskilled = profile.get("upskilled_skills", [])
     
-    result = compute_global_analysis(apps, upskilled)
+    result = compute_global_analysis(apps, profile, upskilled)
     
     if result.get("has_data"):
         data["global_analysis"] = result

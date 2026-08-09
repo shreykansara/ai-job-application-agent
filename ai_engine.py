@@ -365,19 +365,33 @@ def calculate_skill_match(
         }
 
     system = (
-        "You are a senior technical recruiter performing a semantic skill match analysis. "
-        "Given a candidate's skill list and a list of required JD skills, categorize each JD skill as:\n"
+        "You are a senior technical recruiter and career coach. Perform a semantic skill match "
+        "and a job-specific SWOT (Strengths, Weaknesses, Opportunities, Threats) analysis between the candidate's profile and the Job Description.\n"
+        "Categorize each required JD skill as:\n"
         "- 'strong': candidate clearly has this skill\n"
-        "- 'moderate': candidate partially matches (related skill, older version, or weaker variant)\n"
+        "- 'moderate': candidate partially matches (related skill, or weaker variant)\n"
         "- 'missing': candidate does not have this skill\n"
-        "Use semantic understanding (e.g. 'FastAPI' covers 'REST APIs', 'React' covers 'JavaScript' partially). "
-        "Return JSON: {\"strong\": [...], \"moderate\": [...], \"missing\": [...]}"
+        "Also produce 2 specific points for each SWOT category regarding how well the candidate is aligned to this specific role.\n"
+        "Return conforming exactly to this JSON schema:\n"
+        "{\n"
+        "  \"strong\": [\"Skill A\"],\n"
+        "  \"moderate\": [\"Skill B\"],\n"
+        "  \"missing\": [\"Skill C\"],\n"
+        "  \"swot\": {\n"
+        "     \"strengths\": [\"Strength point 1\", \"Strength point 2\"],\n"
+        "     \"weaknesses\": [\"Weakness point 1\", \"Weakness point 2\"],\n"
+        "     \"opportunities\": [\"Opportunity point 1\", \"Opportunity point 2\"],\n"
+        "     \"threats\": [\"Threat point 1\", \"Threat point 2\"]\n"
+        "  }\n"
+        "}"
     )
 
     user_prompt = (
+        f"Candidate Summary: {profile_state.get('profile_summary', 'N/A')}\n"
         f"Candidate Skills: {', '.join(user_skills)}\n"
         f"Weak/Developing Skills: {', '.join(weak_skills)}\n"
-        f"JD Required Skills: {', '.join(jd_skills)}"
+        f"JD Required Skills: {', '.join(jd_skills)}\n"
+        f"Job Description context: {jd_text[:1500]}"
     )
 
     gpt_result = _gpt(system, user_prompt)
@@ -386,6 +400,7 @@ def calculate_skill_match(
     strong_matches = parsed.get("strong", []) or []
     moderate_matches = parsed.get("moderate", []) or []
     missing_skills = parsed.get("missing", []) or []
+    swot_parsed = parsed.get("swot") or {}
 
     # Fallback: exact match if GPT failed
     if not strong_matches and not moderate_matches and not missing_skills:
@@ -410,6 +425,26 @@ def calculate_skill_match(
     if profile_state.get("experience_level") == _infer_experience_level(jd_text):
         match_pct = min(98, match_pct + 5)
 
+    # Reconstruct or fallback SWOT
+    swot_data = {
+        "strengths": swot_parsed.get("strengths") or [
+            f"Strong alignment with {len(final_strong)} of the required core stack skills.",
+            "Demonstrated relevant project/work history matching the role profile."
+        ],
+        "weaknesses": swot_parsed.get("weaknesses") or [
+            f"Missing required skills: {', '.join(missing_skills[:3]) or 'None'}.",
+            f"Some skills (like {', '.join(list(weak_skills)[:2]) or 'none'}) are marked as developing."
+        ],
+        "opportunities": swot_parsed.get("opportunities") or [
+            "Upskill in missing stack components to achieve total compatibility.",
+            "Certify or build projects around the remaining required languages/tools."
+        ],
+        "threats": swot_parsed.get("threats") or [
+            "Competitors with full alignment on the missing technologies.",
+            "Potential interview pressure surrounding weak or missing skills."
+        ]
+    }
+
     return {
         "skill_match_pct": match_pct,
         "strong_matches": final_strong,
@@ -417,6 +452,7 @@ def calculate_skill_match(
         "missing_skills": missing_skills,
         "user_profile_skills": user_skills,
         "required_skills": jd_skills,
+        "swot": swot_data
     }
 
 
@@ -556,9 +592,10 @@ def analyze_rejection_notes(
 # WORKFLOW 4: Global Cross-Rejection Analysis
 # ============================================================
 
-def compute_global_analysis(applications: List[Dict[str, Any]], upskilled_skills: List[str] = None) -> Dict[str, Any]:
+def compute_global_analysis(applications: List[Dict[str, Any]], profile_state: Dict[str, Any] = None, upskilled_skills: List[str] = None) -> Dict[str, Any]:
     """
-    GPT-powered cross-rejection synthesis across all rejected applications.
+    GPT-powered cross-rejection synthesis across all rejected applications,
+    returning a structured SWOT analysis and strategic recommendations.
     """
     rejected_apps = [a for a in applications if a.get("status") == "Not Selected"]
 
@@ -616,19 +653,53 @@ def compute_global_analysis(applications: List[Dict[str, Any]], upskilled_skills
     if not topics_list and not has_any_raw_data:
         topics_list = ["Live Technical Coding & Algorithm Probing", "Detailed System Scalability Questions"]
 
-    # GPT strategic synthesis
-    system = (
-        "You are an expert career strategist. Based on a job seeker's rejection history across multiple companies, "
-        "provide a 2-3 sentence strategic improvement recommendation that is specific, actionable, and prioritized. "
-        "Focus on the top bottlenecks. Write in second person ('You should...'). No bullet points, just a paragraph."
+    # GPT SWOT strategic synthesis
+    system_swot = (
+        "You are an expert career strategist. Analyze the candidate's profile summary, skills, and recent job rejections "
+        "to construct a highly encouraging, actionable, and structured SWOT (Strengths, Weaknesses, Opportunities, Threats) analysis.\n"
+        "Return a JSON object conforming exactly to this schema:\n"
+        "{\n"
+        "  \"strengths\": [\"Strength 1 (2-3 sentences explaining a clear asset)\", \"Strength 2\"],\n"
+        "  \"weaknesses\": [\"Weakness 1 (2-3 sentences explaining a skill gap/struggle topic)\", \"Weakness 2\"],\n"
+        "  \"opportunities\": [\"Opportunity 1 (2-3 sentences recommending an upskilling path/certification)\", \"Opportunity 2\"],\n"
+        "  \"threats\": [\"Threat 1 (2-3 sentences explaining market competition or interview bottlenecks)\", \"Threat 2\"],\n"
+        "  \"recommendation\": \"A 2-3 sentence strategic recommendation...\"\n"
+        "}"
     )
-    user_prompt = (
-        f"Rejection summary across {len(rejected_apps)} application(s):\n"
+
+    if not profile_state:
+        profile_state = {}
+
+    user_swot_prompt = (
+        f"Candidate Name: {profile_state.get('name', 'Candidate')}\n"
+        f"Profile Summary: {profile_state.get('profile_summary', 'N/A')}\n"
+        f"Current Skills: {json.dumps(profile_state.get('skills', {}))}\n"
+        f"Rejection summaries across {len(rejected_apps)} application(s):\n"
         + "\n".join(summaries[:6])
         + f"\n\nTop recurring skill gaps: {', '.join([s for s, _ in recurring_skill_gaps[:3]])}"
         + f"\nTop struggle topics: {', '.join([t for t, _ in common_unanswered_topics[:3]])}"
     )
-    strategic_recommendation = _gpt(system, user_prompt)
+
+    gpt_res = _gpt(system_swot, user_swot_prompt)
+    parsed_swot = _parse_json_response(gpt_res) if gpt_res else {}
+
+    # Read SWOT items with fallbacks
+    strengths = parsed_swot.get("strengths") or [
+        f"Solid professional experience as a candidate with a strong background in QA and delivery.",
+        "Demonstrated learning agility by actively tracking and documenting profile weaknesses."
+    ]
+    weaknesses = parsed_swot.get("weaknesses") or [
+        f"Skill gaps identified in domains: {', '.join([s for s, _ in recurring_skill_gaps[:2]]) or 'core technical topics'}."
+    ]
+    opportunities = parsed_swot.get("opportunities") or [
+        "Upskilling in missing technical areas and adding certifications to the profile.",
+        "Leveraging existing fintech/QA experience to target specialized domain roles."
+    ]
+    threats = parsed_swot.get("threats") or [
+        "Increasing market competition for generic cloud and engineering roles.",
+        "Rising expectations for hands-on scripting and programming in QA lead interviews."
+    ]
+    strategic_recommendation = parsed_swot.get("recommendation") or ""
 
     if not strategic_recommendation:
         top_gap_names = [s for s, _ in recurring_skill_gaps[:2]]
@@ -656,4 +727,10 @@ def compute_global_analysis(applications: List[Dict[str, Any]], upskilled_skills
         "common_unanswered_topics": topics_list,
         "consistent_weak_areas": consistent_weak_areas,
         "summary_recommendation": strategic_recommendation,
+        "swot": {
+            "strengths": strengths,
+            "weaknesses": weaknesses,
+            "opportunities": opportunities,
+            "threats": threats
+        }
     }

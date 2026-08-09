@@ -413,9 +413,13 @@ export default function ProfileSetup({
                 disabled={uploadingProfile}
               />
               <div className="upload-icon" style={{ color: 'var(--accent-indigo)' }}>
-                <UploadCloud size={32} />
+                {uploadingProfile ? (
+                  <span className="spinner-large"></span>
+                ) : (
+                  <UploadCloud size={32} />
+                )}
               </div>
-              <div className="upload-label">
+              <div className="upload-label" style={{ fontWeight: uploadingProfile ? 600 : 500 }}>
                 {uploadingProfile ? 'Extracting & organizing data...' : 'Click or drop your profile here'}
               </div>
               <div className="upload-hint">Accepted formats: .txt, .pdf, .docx</div>
@@ -434,7 +438,7 @@ export default function ProfileSetup({
               <Palette size={18} style={{ color: 'var(--text-accent)' }} /> Reference Resume (Optional)
             </div>
             <div className="card-subtitle">Upload a pre-styled PDF/Word resume to guide ReportLab style parameters</div>
-            <div className={`upload-zone ${referenceResumeStyle ? 'loaded' : ''}`}>
+            <div className={`upload-zone ${uploadingRef ? 'loading' : referenceResumeStyle ? 'loaded' : ''}`}>
               <input
                 type="file"
                 accept=".pdf,.docx"
@@ -442,9 +446,13 @@ export default function ProfileSetup({
                 disabled={uploadingRef}
               />
               <div className="upload-icon" style={{ color: 'var(--accent-indigo)' }}>
-                <UploadCloud size={32} />
+                {uploadingRef ? (
+                  <span className="spinner-large"></span>
+                ) : (
+                  <UploadCloud size={32} />
+                )}
               </div>
-              <div className="upload-label">
+              <div className="upload-label" style={{ fontWeight: uploadingRef ? 600 : 500 }}>
                 {uploadingRef ? 'Analyzing layout...' : 'Click or drop reference resume'}
               </div>
               <div className="upload-hint">Accepted formats: .pdf, .docx</div>
@@ -555,7 +563,7 @@ export default function ProfileSetup({
               {Object.keys(profile.skills).map((category) => (
                 <div key={category} style={{ marginBottom: '16px', padding: '16px', background: 'rgba(255,255,255,0.015)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <strong style={{ fontSize: '0.88rem', color: '#fff' }}>{category}</strong>
+                    <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{category}</strong>
                     <button className="btn btn-sm btn-danger" style={{ padding: '3px 10px', fontSize: '0.72rem' }} onClick={() => handleRemoveSkillsCategory(category)}>
                       Remove Category
                     </button>

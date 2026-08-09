@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Globe, TrendingUp, AlertTriangle, AlertOctagon, HelpCircle, 
-  Settings, Info, Sparkles, TrendingDown, RefreshCw, BarChart2
+  Settings, Info, Sparkles, TrendingDown, RefreshCw, BarChart2,
+  Compass, Award
 } from 'lucide-react';
 
 export default function TabGlobalAnalysis({ applications, showToast }) {
@@ -132,6 +133,89 @@ export default function TabGlobalAnalysis({ applications, showToast }) {
             </ul>
           )}
         </div>
+
+        {/* SWOT Analysis Section */}
+        {analysisData.swot && (
+          <div className="analysis-section" style={{ marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-accent)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <Compass size={18} /> SWOT Alignment Matrix
+            </h3>
+            
+            <div className="swot-grid">
+              {/* Strengths */}
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.03)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '20px',
+                backdropFilter: 'blur(12px)'
+              }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-emerald-light)', fontSize: '0.92rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+                  <Award size={16} /> Strengths (S)
+                </h4>
+                <ul style={{ paddingLeft: '18px', listStyleType: 'disc', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                  {(analysisData.swot.strengths || []).map((s, idx) => (
+                    <li key={idx} style={{ marginBottom: '8px' }}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Weaknesses */}
+              <div style={{
+                background: 'rgba(244, 63, 94, 0.03)',
+                border: '1px solid rgba(244, 63, 94, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '20px',
+                backdropFilter: 'blur(12px)'
+              }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-rose)', fontSize: '0.92rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+                  <AlertOctagon size={16} /> Weaknesses (W)
+                </h4>
+                <ul style={{ paddingLeft: '18px', listStyleType: 'disc', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                  {(analysisData.swot.weaknesses || []).map((w, idx) => (
+                    <li key={idx} style={{ marginBottom: '8px' }}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Opportunities */}
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.03)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '20px',
+                backdropFilter: 'blur(12px)'
+              }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-indigo-light)', fontSize: '0.92rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+                  <Sparkles size={16} /> Opportunities (O)
+                </h4>
+                <ul style={{ paddingLeft: '18px', listStyleType: 'disc', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                  {(analysisData.swot.opportunities || []).map((o, idx) => (
+                    <li key={idx} style={{ marginBottom: '8px' }}>{o}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Threats */}
+              <div style={{
+                background: 'rgba(245, 158, 11, 0.03)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '20px',
+                backdropFilter: 'blur(12px)'
+              }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-amber)', fontSize: '0.92rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+                  <AlertTriangle size={16} /> Threats (T)
+                </h4>
+                <ul style={{ paddingLeft: '18px', listStyleType: 'disc', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                  {(analysisData.swot.threats || []).map((t, idx) => (
+                    <li key={idx} style={{ marginBottom: '8px' }}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Strategic Recommendation */}
         <div className="analysis-section" style={{ marginBottom: '24px' }}>

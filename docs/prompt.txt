@@ -1,0 +1,124 @@
+You are building a Python-only, Streamlit-based "Debate Agent" app that demonstrates RAG intuition and agent design using markdown rule files.
+
+GOAL
+Create a runnable Streamlit app where two AI agents (PRO and CON) debate capital punishment using ONLY evidence retrieved from their respective PDFs. The "agent-ness" must come from markdown rule files injected into the system prompt — not hardcoded logic.
+
+---
+
+HARD REQUIREMENTS
+
+1) Python only. Streamlit UI.
+
+2) Inputs (all in project root):
+   - "Capital Punishment is a must.pdf" → PRO evidence
+   - "Capital Punishment must be abolished.pdf" → CON evidence
+   - "API.txt" → OpenAI API key
+   If any of these are missing → show a clear styled error message and stop execution.
+
+3) Each agent uses ONLY its own PDF. PRO never sees CON chunks. CON never sees PRO chunks. Zero cross-contamination.
+
+4) Every claim must be tagged [PRO] or [CON] depending on the speaker.
+
+5) No hallucination. If the retrieved context does not support a claim, the agent must explicitly say: "The available evidence does not address this directly [PRO/CON]." Never fabricate quotes or paraphrases.
+
+6) Two debate modes (selectable in sidebar):
+   - Manual: user can play as PRO, CON, or Observer.
+     - If PRO or CON: when it is the user's turn, show a text input for them to type their argument. When it is the AI's turn, show a button to generate the AI response.
+     - If Observer: the user manually clicks a button to generate each turn — one button per turn, alternating PRO and CON. The user types nothing, just advances the debate step by step.
+   - Automatic: app runs all turns end-to-end for N rounds without any user intervention. One round = one PRO turn + one CON turn.
+
+7) Number of rounds must be configured BEFORE selecting mode. It applies to both Manual and Automatic. Show it as the first control in the sidebar.
+
+8) Hardness selector (Low / Medium / High) in sidebar:
+   - Low: constructive tone, acknowledge opponent's valid points before rebutting.
+   - Medium: firm and direct, minimal concessions.
+   - High: aggressive, challenge every premise, demand evidence precision, expose logical gaps.
+   This changes the system prompt instruction and the LLM temperature (0.4 / 0.6 / 0.8).
+
+9) Markdown rule files define all agent behavior. On every turn, read these files fresh and inject them into the system prompt. All files are in the project root (no subfolders):
+   - Global rules (both agents):  debate-rules.md
+   - PRO role card:               debate-pro-skill.md
+   - CON role card:               debate-con-skill.md
+   The agent behavior, tone, output format, and evidence rules must all come from these files — not from hardcoded strings in Python.
+
+10) Strict output format every turn (LLM must follow this exactly):
+
+   **Opponent Claim:** One sentence summarizing the opponent's most recent argument.
+   **Rebuttal:** 2–4 sentences countering that claim using evidence from the agent's own document.
+   **Evidence:** One quote or paraphrase from the agent's PDF, tagged [PRO] or [CON].
+
+11) UI shows chat bubbles for PRO and CON. No chain-of-thought exposure. No <thought> blocks. No internal reasoning visible to the user.
+
+12) After the final round, generate and display a neutral moderator summary (3–5 sentences, fair to both sides).
+
+---
+
+RAG PIPELINE (keep it simple but real)
+
+- Extract plain text from each PDF. Use pdfplumber if available, fallback to PyPDF2.
+- Chunk each PDF into overlapping character windows. Default: chunk_size=400, overlap=80. Make these configurable.
+- Embed all chunks at startup using OpenAI text-embedding-3-small.
+- On each agent turn:
+  - Use the opponent's last message as the retrieval query.
+  - Embed the query.
+  - Compute cosine similarity between query vector and all chunk vectors.
+  - Retrieve top-K chunks (default K=5, configurable).
+  - Pass ONLY those retrieved chunks as context in the system prompt.
+- The agent must ground all claims in those retrieved chunks only.
+- If context is insufficient, the agent must say so explicitly.
+
+---
+
+DEBATE ENGINE
+
+Each agent (PRO and CON) must behave as follows:
+
+At startup:
+- The agent receives its own PDF text, role, hardness level, and RAG settings.
+- It chunks its PDF, embeds all chunks, and loads its markdown files. All of this happens once at the start.
+
+When generating a response:
+- The agent looks at the opponent's most recent argument and uses it as the search query.
+- It retrieves the top-K most relevant chunks from its own PDF using cosine similarity.
+- It assembles a system prompt containing: global rules + its role card + hardness instruction + the retrieved chunks.
+- It sends the full debate conversation so far (every turn, in order) along with this system prompt to gpt-4o.
+- It returns only the final response — no internal reasoning, no chain-of-thought.
+
+After the final round:
+- A neutral moderator reads the full debate transcript and produces a 3-5 sentence summary that is fair to both sides.
+
+---
+
+UI / UX REQUIREMENTS
+
+Design: clean, corporate, editorial. Not gaudy. Think a high-end legal or policy publication.
+- Font: Playfair Display for headings, DM Sans for body text, DM Mono for evidence tags.
+- Colors: off-white background (#f8f7f4), deep navy for PRO (#0f1f3d), deep burgundy for CON (#6b1a1a), warm black for text.
+- PRO chat bubbles: left-aligned, navy left border, light blue-grey background.
+- CON chat bubbles: right-aligned, burgundy left border, light rose background.
+- Sidebar: white card with subtle shadow, clear section labels.
+- All buttons: filled, no-nonsense, matching their action color (navy for PRO actions, burgundy for CON, neutral dark for reset).
+- Round counter visible at top: "Round X of N" as a clean status badge.
+- Moderator summary shown in a distinct framed card at the end with a gavel icon.
+- No emoji avatars. Use styled initials badges: "A" for PRO, "B" for CON.
+- No chain-of-thought, no spinners with internal model text. Just "Generating..." on the button.
+
+---
+
+ACCEPTANCE CRITERIA
+
+- streamlit run app.py is the only entry point and runs without errors.
+- If API.txt is missing → styled error, stop.
+- If either PDF is missing → styled error, stop.
+- Number of rounds is the first sidebar control, shown before mode selection.
+- Every agent turn follows the strict 3-part format exactly.
+- Evidence is tagged [PRO] or [CON] and is traceable to retrieved chunks.
+- PRO agent never has access to CON PDF content and vice versa.
+- No chain-of-thought or internal reasoning is visible in the UI.
+- Moderator summary appears after the final round automatically.
+- Hardness change reinitializes agents without losing the debate history display.
+- Reset clears history and returns to initial state.
+
+---
+
+Now generate the complete codebase. Every file complete, no placeholders, no TODOs.
