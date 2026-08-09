@@ -18,8 +18,11 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-# Legacy API credentials
-API.txt
-
 # Local application data and candidate records
 data.json
+
+# Node / React build and dependency directories
+node_modules/
+dist/
+.eslintcache
+
